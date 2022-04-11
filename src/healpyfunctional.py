@@ -1676,10 +1676,11 @@ class HealpyPseudoConv_Transpose(Layer):
         self.Fout = Fout
         self.kernel_regularizer = kernel_regularizer
         
+        
         if kernel_initializer is None:
-            self.initializer = tf.keras.initializers.HeNormal()
-        elif hasattr(tf.keras.initializers, initializer):
-            self.initializer = getattr(tf.keras.initializers, kernel_initializer)
+            self.kernel_initializer = tf.keras.initializers.HeNormal()
+        elif hasattr(tf.keras.initializers, kernel_initializer):
+            self.kernel_initializer = getattr(tf.keras.initializers, kernel_initializer)
         else:
             raise ValueError(f"Could not find initializer <{kernel_initializer}> in tf.keras.initializers...")        
                 
@@ -1702,7 +1703,7 @@ class HealpyPseudoConv_Transpose(Layer):
         #                                              **self.kwargs)
         self.filter = tf.keras.layers.Conv1DTranspose(self.Fout, self.filter_size, strides=self.filter_size,
                                                       padding='valid', data_format='channels_last',
-                                                      kernel_initializer = self.initializer, 
+                                                      kernel_initializer = self.kernel_initializer, 
                                                       kernel_regularizer = self.kernel_regularizer,
                                                       **self.kwargs)
     def build(self, input_shape):
