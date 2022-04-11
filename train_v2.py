@@ -171,7 +171,7 @@ class GCNHealpy_uNetlike(Model, gcw.GCW):
         
         xup = hpf.HealpyPseudoConv_Transpose(nside=nside_out2, indices=indices_out2, 
                                              p=1, Fout=64, 
-                                             initializer='he_normal')(x)
+                                             kernel_initializer='he_normal')(x)
         xup = tf.keras.layers.ReLU()(xup)
         xup = tf.keras.layers.BatchNormalization(axis=-1, momentum=0.99, 
                                                  epsilon=0.001, center=False, 
@@ -179,10 +179,10 @@ class GCNHealpy_uNetlike(Model, gcw.GCW):
         
         nside_up1 = hpf.HealpyPseudoConv_Transpose(nside=nside_out2, indices=indices_out2, 
                                                    p=1, Fout=64, 
-                                                   initializer='he_normal').nside_out
+                                                   kernel_initializer='he_normal').nside_out
         indices_up1 = hpf.HealpyPseudoConv_Transpose(nside=nside_out2, indices=indices_out2, 
                                                    p=1, Fout=64, 
-                                                   initializer='he_normal').indices_out
+                                                   kernel_initializer='he_normal').indices_out
         xup = self.Conv(nside=nside_up1, indices=indices_up1, n_neighbors=20, poly_type='chebyshev',
                         K=8, Fout=64, activation='relu', use_bn=True, 
                         kernel_initializer='he_normal', kernel_regularizer=self.l2(weight_decay))(xup)
@@ -248,7 +248,7 @@ class GCNHealpy_uNetlike(Model, gcw.GCW):
         
         xup2 = hpf.HealpyPseudoConv_Transpose(nside=nside_out3, indices=indices_out3, 
                                              p=1, Fout=128, 
-                                             initializer='he_normal')(x)
+                                             kernel_initializer='he_normal')(x)
         xup2 = tf.keras.layers.ReLU()(xup2)
         xup2 = tf.keras.layers.BatchNormalization(axis=-1, momentum=0.99, 
                                                  epsilon=0.001, center=False, 
@@ -257,10 +257,10 @@ class GCNHealpy_uNetlike(Model, gcw.GCW):
         
         nside_up2 = hpf.HealpyPseudoConv_Transpose(nside=nside_out3, indices=indices_out3, 
                                                    p=1, Fout=128, 
-                                                   initializer='he_normal').nside_out
+                                                   kernel_initializer='he_normal').nside_out
         indices_up2 = hpf.HealpyPseudoConv_Transpose(nside=nside_out3, indices=indices_out3, 
                                                    p=1, Fout=128, 
-                                                   initializer='he_normal').indices_out
+                                                   kernel_initializer='he_normal').indices_out
         xup2 = self.Conv(nside=nside_up2, indices=indices_up2, n_neighbors=20, poly_type='chebyshev',
                         K=8, Fout=128, activation='relu', use_bn=True, 
                         kernel_initializer='he_normal', kernel_regularizer=self.l2(weight_decay))(xup2)
@@ -326,7 +326,7 @@ class GCNHealpy_uNetlike(Model, gcw.GCW):
         
         xup3 = hpf.HealpyPseudoConv_Transpose(nside=nside_out4, indices=indices_out4, 
                                              p=1, Fout=256, 
-                                             initializer='he_normal')(x)
+                                             kernel_initializer='he_normal')(x)
         xup3 = tf.keras.layers.ReLU()(xup3)
         xup3 = tf.keras.layers.BatchNormalization(axis=-1, momentum=0.99, 
                                                  epsilon=0.001, center=False, 
@@ -335,10 +335,10 @@ class GCNHealpy_uNetlike(Model, gcw.GCW):
         
         nside_up3 = hpf.HealpyPseudoConv_Transpose(nside=nside_out4, indices=indices_out4, 
                                                    p=1, Fout=256, 
-                                                   initializer='he_normal').nside_out
+                                                   kernel_initializer='he_normal').nside_out
         indices_up3 = hpf.HealpyPseudoConv_Transpose(nside=nside_out4, indices=indices_out4, 
                                                    p=1, Fout=256, 
-                                                   initializer='he_normal').indices_out
+                                                   kernel_initializer='he_normal').indices_out
         xup3 = self.Conv(nside=nside_up3, indices=indices_up3, n_neighbors=20, poly_type='chebyshev',
                         K=8, Fout=256, activation='relu', use_bn=True, 
                         kernel_initializer='he_normal', kernel_regularizer=self.l2(weight_decay))(xup3)
