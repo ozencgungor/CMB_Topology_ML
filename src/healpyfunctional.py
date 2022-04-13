@@ -99,6 +99,25 @@ def reduce_indices(nside_in, nside_out, indices_in):
     # get the new indices
     return np.arange(hp.nside2npix(nside_in))[m_in < 1e-12] 
 
+@tf.function()
+def reduce_indices_v2(indices, p):
+    """
+    Minimally reduces a set of indices such that it can be reduced to nside_out in a healpy fashion. Four pixels reduce
+    naturally to a higher order superpixel. The pixel indices returned by this function will be pixels that do not have
+    any masked pixel belonging to the same superpixel as the pixel itself. Could be faster than the healpy version.
+    Does not require information about the current nside.
+    :param indices: 1d array of integer pixel indices. tf.tensor or np.ndarray
+    :param p: integer. reduction factor (nside -> nside/(2**p))
+    :returns: tf.tensor of new indices.
+    """
+    indices = tf.cast(tf.convert_to_tensor(indices), dtype=tf.int32)
+    new_indices = tf.fill(indices.shape, -1)
+    for i in tf.range(indices.shape[0]-((4**p)-1)):
+        if indices[i]%(4**p)==0:
+            if tf.experimental.numpy.array_equal(indices[i:i + 4**p], tf.range(indices[i], indices[i] + 4**p, dtype=tf.int32)):
+                new_indices = tf.tensor_scatter_nd_update(new_indices, tf.reshape(tf.range(i,i + 4**p),[4**p,1]), indices[i:i + 4**p])
+    return tf.squeeze(tf.gather(new_indices, tf.where(new_indices>-1)))
+
 def transformed_indices(nside_in, nside_out, indices):
     """
     utility function to get new indices after a change in n_side
@@ -119,6 +138,26 @@ def transformed_indices(nside_in, nside_out, indices):
     mask_out = hp.ud_grade(map_in=mask_in, nside_out=nside_out, order_in="NEST", order_out="NEST")
     transformed_indices = np.arange(hp.nside2npix(nside_out))[mask_out > 1e-12]
     return transformed_indices
+
+@tf.function
+def transform_indices_v2(indices, p, reduce=True):
+    """
+    Utility function to get new indices after a change in nside
+    :param indices: ndarray or tf.tensor. current indices to be transformed to new nside
+    :param p: int > 0. reduction(boost) factor, nside -> nside/(2**p) or nside*(2**p)
+    :param reduce: bool. whether nside is being reduced or increased. if true, will 
+                   calculate the new indices for nside -> nside/(2**p), if false, will
+                   calculate the new indices for nside -> nside*(2**p). defaults to true.
+    returns: a tf.tensor. indices for the new nside.
+    """
+    indices = tf.cast(tf.convert_to_tensor(indices), dtype=tf.int32)
+    if reduce:
+        super_pix = indices%(4**p)
+        new_indices = tf.squeeze(tf.gather(indices, tf.where(super_pix == 0)))//4
+    else:
+        new_indices = tf.repeat((4**p)*indices, (4**p))
+        new_indices = new_indices + tf.range((4**p)*indices.shape[0],dtype=tf.int32)%(4**p)
+    return new_indices
 
 
 class HealpyChebyshevConv(Layer):
@@ -1956,3 +1995,46 @@ class HealpySeparableConv(Layer):
                  }
         base_config = super().get_config()
         return dict(list(base_config.items()) + list(config.items()))
+
+class HealpyMask(Layer):
+    """
+    A utility layer to mask input maps.
+    """
+    def __init__(self, unmasked_indices, nside=None, indices=None):
+        """
+        :param unmasked_indices: array. indices that will be left unmasked.
+        :param nside: optional, int of form 2**p, nside of the input maps
+        :param indices: optional, array, indices of the input maps
+        returns: a tensor of shape (N, M, F)
+        """
+        super(HealpyMask, self).__init__()
+        self.unmasked_indices = unmasked_indices
+        self.nside = nside
+        self.indices = indices
+        self.nside_out = nside
+        self.indices_out = unmasked_indices
+
+    def call(self, input_tensor, *args, **kwargs):
+        """
+        Calls the layer on a input tensor
+        :param input_tensor: input of the layer shape (batch, nodes, channels)
+        :param args: further arguments
+        :param kwargs: further keyword arguments
+        :return: the output of the layer, nside of the output, indices of the output
+        """
+        x = tf.gather(input_tensor, indices=self.unmasked_indices, axis=1)        
+        return x
+
+
+
+
+
+
+
+
+
+
+
+
+
+

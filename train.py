@@ -398,14 +398,6 @@ checkpoint_path = "runs_2/training_3_class/SGDopt_xception_v3_L_precalc_adaptive
 checkpoint_dir = os.path.dirname(checkpoint_path)
 checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt")
 
-csv_logger = tf.keras.callbacks.CSVLogger('training_log.csv')
-callbacklist = []
-
-
-callbacks = tf.keras.callbacks.CallbackList(
-    callbacklist, add_history=True, model=model)
-
-
 def lr_decay(lr_init, epoch, num_batches, decay=0.998):
     steps = epoch * BUFFER_SIZE//GLOBAL_BATCH_SIZE + num_batches
     if epoch < 20:
