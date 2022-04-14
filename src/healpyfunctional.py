@@ -140,7 +140,7 @@ def transformed_indices(nside_in, nside_out, indices):
     return transformed_indices
 
 @tf.function
-def transform_indices_v2(indices, p, reduce=True):
+def transformed_indices_v2(indices, p, reduce=True):
     """
     Utility function to get new indices after a change in nside
     :param indices: ndarray or tf.tensor. current indices to be transformed to new nside
@@ -1513,12 +1513,20 @@ class HealpyPool(Layer):
         self.pool_type = pool_type
         self.kwargs = kwargs
         self.nside_out = self.nside//(2**self.p)
-        self.masked_indices = reduce_indices(nside_in=self.nside, 
-                                             nside_out=self.nside_out, 
-                                             indices_in=self.indices)
-        self.indices_out = transformed_indices(self.nside, 
-                                               self.nside_out, 
-                                               self.masked_indices)
+        #self.masked_indices = reduce_indices(nside_in=self.nside,     #old one relying on healpy
+        #                                     nside_out=self.nside_out, 
+        #                                     indices_in=self.indices)
+        self.masked_indices = reduce_indices_v2(indices=self.indices,  #the new index function
+                                                p=self.p)
+        
+        
+        #self.indices_out = transformed_indices(self.nside,            #old index transformation func, relying on healpy
+        #                                       self.nside_out, 
+        #                                       self.masked_indices)
+        
+        self.indices_out = transformed_indices_v2(indices=self.masked_indices,  #new index function
+                                                  p=self.p,
+                                                  reduce=True)
         
         #self.indices_out = transformed_indices(self.nside, self.nside_out, self.indices)
 
@@ -1594,11 +1602,9 @@ class HealpyPseudoConv(Layer):
             raise IOError("The reduction factors has to be at least 1!")
 
         # save variables
-        self.nside = nside
-        self.indices = indices
         self.p = p
-        self.filter_size = int(4 ** p)
         self.Fout = Fout
+        self.filter_size = int(4 ** p)
         self.kernel_regularizer = kernel_regularizer
         
         if initializer is None:
@@ -1614,16 +1620,28 @@ class HealpyPseudoConv(Layer):
             self.activation = getattr(tf.keras.activations, activation)
         else:
             raise ValueError(f"Could not find activation <{activation}> in tf.keras.activations...")
+        
+        self.nside = nside
+        self.indices = indices
         self.kwargs = kwargs
         self.nside_out = self.nside//(2**self.p)
-        self.masked_indices = reduce_indices(nside_in=self.nside, 
-                                             nside_out=self.nside_out, 
-                                             indices_in=self.indices)
-        self.indices_out = transformed_indices(self.nside, 
-                                               self.nside_out, 
-                                               self.masked_indices)
         
-        #self.indices_out = transformed_indices(self.nside, self.nside_out, self.indices)
+        #self.masked_indices = reduce_indices(nside_in=self.nside,       #old index func, healpy backend.
+        #                                     nside_out=self.nside_out, 
+        #                                     indices_in=self.indices)
+        
+        self.masked_indices = reduce_indices_v2(indices=self.indices,    #new func
+                                                p=self.p)
+        
+        #self.indices_out = transformed_indices(self.nside,              #old index func, healpy backend.
+        #                                       self.nside_out, 
+        #                                       self.masked_indices)
+        
+        self.indices_out = transformed_indices_v2(indices=self.masked_indices, #new func
+                                                  p=self.p,
+                                                  reduce=True)
+        
+        ######self.indices_out = transformed_indices(self.nside, self.nside_out, self.indices)  #oldold func, should remove
 
         # create the filters
         self.filter = tf.keras.layers.Conv1D(self.Fout, 
@@ -2013,6 +2031,8 @@ class HealpyMask(Layer):
         self.indices = indices
         self.nside_out = nside
         self.indices_out = unmasked_indices
+    
+    
 
     def call(self, input_tensor, *args, **kwargs):
         """
