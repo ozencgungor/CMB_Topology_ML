@@ -253,7 +253,6 @@ class GCNHealpy_uNetlike(Model, gcw.GCW):
         xup2 = tf.keras.layers.BatchNormalization(axis=-1, momentum=0.99, 
                                                  epsilon=0.001, center=False, 
                                                  scale=False)(xup2)
-        #xup2 = tf.keras.layers.Add()([xup, xup2])
         
         nside_up2 = hpf.HealpyPseudoConv_Transpose(nside=nside_out3, indices=indices_out3, 
                                                    p=1, Fout=128, 
@@ -261,6 +260,10 @@ class GCNHealpy_uNetlike(Model, gcw.GCW):
         indices_up2 = hpf.HealpyPseudoConv_Transpose(nside=nside_out3, indices=indices_out3, 
                                                    p=1, Fout=128, 
                                                    kernel_initializer='he_normal').indices_out
+        
+        xupmasked = hpf.HealpyMask(unmasked_indices=indices_up2)(xup)        
+        xup2 = tf.keras.layers.Add()([xupmasked, xup2])
+
         xup2 = self.Conv(nside=nside_up2, indices=indices_up2, n_neighbors=20, poly_type='chebyshev',
                         K=8, Fout=128, activation='relu', use_bn=True, 
                         kernel_initializer='he_normal', kernel_regularizer=self.l2(weight_decay))(xup2)
@@ -331,14 +334,17 @@ class GCNHealpy_uNetlike(Model, gcw.GCW):
         xup3 = tf.keras.layers.BatchNormalization(axis=-1, momentum=0.99, 
                                                  epsilon=0.001, center=False, 
                                                  scale=False)(xup3)
-        #xup3 = tf.keras.layers.Add()([xup2, xup3])
         
         nside_up3 = hpf.HealpyPseudoConv_Transpose(nside=nside_out4, indices=indices_out4, 
                                                    p=1, Fout=256, 
                                                    kernel_initializer='he_normal').nside_out
         indices_up3 = hpf.HealpyPseudoConv_Transpose(nside=nside_out4, indices=indices_out4, 
                                                    p=1, Fout=256, 
-                                                   kernel_initializer='he_normal').indices_out
+                                                   kernel_initializer='he_normal').indices_out        
+        
+        xup2masked = hpf.HealpyMask(unmasked_indices=indices_up3)(xup2)
+        xup3 = tf.keras.layers.Add()([xup2, xup3])
+        
         xup3 = self.Conv(nside=nside_up3, indices=indices_up3, n_neighbors=20, poly_type='chebyshev',
                         K=8, Fout=256, activation='relu', use_bn=True, 
                         kernel_initializer='he_normal', kernel_regularizer=self.l2(weight_decay))(xup3)
